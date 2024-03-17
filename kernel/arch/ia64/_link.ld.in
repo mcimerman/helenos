@@ -34,7 +34,7 @@ SECTIONS {
 		KEEP(*(.eh_frame .eh_frame.*));
 		eh_frame_end = .;
 	}
-	
+
 	.data : {
 		kdata_start = .;
 		KEEP(*(K_DATA_START));
