@@ -26,5 +26,5 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-deps = [ 'label', 'block' ]
+deps = [ 'block', 'device', 'label' ]
 src = files('disk.c', 'vbd.c')
