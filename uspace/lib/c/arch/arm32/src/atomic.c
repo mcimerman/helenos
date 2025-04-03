@@ -37,6 +37,54 @@
 
 volatile unsigned *ras_page;
 
+bool __atomic_compare_exchange_1(volatile void *mem0, void *expected0,
+    unsigned char desired, bool weak, int success, int failure)
+{
+	volatile unsigned *mem = mem0;
+	unsigned char *expected = expected0;
+
+	(void) success;
+	(void) failure;
+	(void) weak;
+
+	unsigned char ov = *expected;
+	unsigned ret;
+
+	/*
+	 * The following instructions between labels 1 and 2 constitute a
+	 * Restartable Atomic Sequence. Should the sequence be non-atomic,
+	 * the kernel will restart it.
+	 */
+	asm volatile (
+	    "1:\n"
+	    "	adr %[ret], 1b\n"
+	    "	str %[ret], %[rp0]\n"
+	    "	adr %[ret], 2f\n"
+	    "	str %[ret], %[rp1]\n"
+
+	    "	ldrb %[ret], %[addr]\n"
+	    "	cmp %[ret], %[ov]\n"
+	    "	streqb %[nv], %[addr]\n"
+	    "2:\n"
+	    : [ret] "=&r" (ret),
+	      [rp0] "=m" (ras_page[0]),
+	      [rp1] "=m" (ras_page[1]),
+	      [addr] "+m" (*mem)
+	    : [ov] "r" (ov),
+	      [nv] "r" (desired)
+	    : "memory"
+	);
+
+	ras_page[0] = 0;
+	ras_page[1] = 0xffffffff;
+
+	if (ret == ov)
+		return true;
+
+	*expected = ret;
+	return false;
+}
+
 bool __atomic_compare_exchange_4(volatile void *mem0, void *expected0,
     unsigned desired, bool weak, int success, int failure)
 {
