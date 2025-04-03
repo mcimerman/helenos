@@ -113,6 +113,7 @@ unsigned char __atomic_exchange_1(volatile void *mem0, unsigned char val,
 	      [rp1] "=m" (ras_page[1]),
 	      [addr] "+m" (*mem)
 	    : [imm] "r" (val)
+	    : "memory"
 	);
 
 	ras_page[0] = 0;
@@ -149,6 +150,7 @@ unsigned short __atomic_exchange_2(volatile void *mem0, unsigned short val,
 	      [rp1] "=m" (ras_page[1]),
 	      [addr] "+m" (*mem)
 	    : [imm] "r" (val)
+	    : "memory"
 	);
 
 	ras_page[0] = 0;
@@ -184,6 +186,7 @@ unsigned __atomic_exchange_4(volatile void *mem0, unsigned val, int model)
 	      [rp1] "=m" (ras_page[1]),
 	      [addr] "+m" (*mem)
 	    : [imm] "r" (val)
+	    : "memory"
 	);
 
 	ras_page[0] = 0;
@@ -221,6 +224,7 @@ unsigned short __atomic_fetch_add_2(volatile void *mem0, unsigned short val,
 	      [rp1] "=m" (ras_page[1]),
 	      [addr] "+m" (*mem)
 	    : [imm] "r" (val)
+	    : "memory"
 	);
 
 	ras_page[0] = 0;
@@ -257,6 +261,7 @@ unsigned __atomic_fetch_add_4(volatile void *mem0, unsigned val, int model)
 	      [rp1] "=m" (ras_page[1]),
 	      [addr] "+m" (*mem)
 	    : [imm] "r" (val)
+	    : "memory"
 	);
 
 	ras_page[0] = 0;
