@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <abi/ipc/ipc.h> /* DATA_XFER_LIMIT */
 #include <as.h>
 #include <ddf/driver.h>
 #include <ddf/interrupt.h>
@@ -163,9 +164,17 @@ static errno_t virtio_blk_bd_close(bd_srv_t *bd)
 	return EOK;
 }
 
-static errno_t virtio_blk_rw_block(virtio_blk_t *virtio_blk, bool read,
-    aoff64_t ba, void *buf)
+static errno_t virtio_blk_bd_rw_blocks(bd_srv_t *bd, aoff64_t ba, size_t cnt,
+    void *buf, size_t size, bool read)
 {
+	virtio_blk_t *virtio_blk = (virtio_blk_t *) bd->srvs->sarg;
+
+	if (size != cnt * VIRTIO_BLK_BLOCK_SIZE)
+		return EINVAL;
+
+	if (cnt > DATA_XFER_LIMIT / VIRTIO_BLK_BLOCK_SIZE)
+		return EINVAL;
+
 	virtio_dev_t *vdev = &virtio_blk->virtio_dev;
 
 	/*
@@ -198,7 +207,7 @@ static errno_t virtio_blk_rw_block(virtio_blk_t *virtio_blk, bool read,
 
 	/* Copy write data to the request. */
 	if (!read)
-		memcpy(virtio_blk->rq_buf[descno], buf, VIRTIO_BLK_BLOCK_SIZE);
+		memcpy(virtio_blk->rq_buf[descno], buf, size);
 
 	fibril_mutex_lock(&virtio_blk->completion_lock[descno]);
 
@@ -210,7 +219,7 @@ static errno_t virtio_blk_rw_block(virtio_blk_t *virtio_blk, bool read,
 	    virtio_blk->rq_header_p[descno], sizeof(virtio_blk_req_header_t),
 	    VIRTQ_DESC_F_NEXT, REQ_BUFFER_DESC(descno));
 	virtio_virtq_desc_set(vdev, RQ_QUEUE, REQ_BUFFER_DESC(descno),
-	    virtio_blk->rq_buf_p[descno], VIRTIO_BLK_BLOCK_SIZE,
+	    virtio_blk->rq_buf_p[descno], size,
 	    VIRTQ_DESC_F_NEXT | (read ? VIRTQ_DESC_F_WRITE : 0),
 	    REQ_FOOTER_DESC(descno));
 	virtio_virtq_desc_set(vdev, RQ_QUEUE, REQ_FOOTER_DESC(descno),
@@ -247,7 +256,7 @@ static errno_t virtio_blk_rw_block(virtio_blk_t *virtio_blk, bool read,
 
 	/* Copy read data from the request */
 	if (rc == EOK && read)
-		memcpy(buf, virtio_blk->rq_buf[descno], VIRTIO_BLK_BLOCK_SIZE);
+		memcpy(buf, virtio_blk->rq_buf[descno], size);
 
 	/* Free the descriptor and buffer */
 	fibril_mutex_lock(&virtio_blk->free_lock);
@@ -256,26 +265,6 @@ static errno_t virtio_blk_rw_block(virtio_blk_t *virtio_blk, bool read,
 	fibril_mutex_unlock(&virtio_blk->free_lock);
 
 	return rc;
-}
-
-static errno_t virtio_blk_bd_rw_blocks(bd_srv_t *bd, aoff64_t ba, size_t cnt,
-    void *buf, size_t size, bool read)
-{
-	virtio_blk_t *virtio_blk = (virtio_blk_t *) bd->srvs->sarg;
-	aoff64_t i;
-	errno_t rc;
-
-	if (size != cnt * VIRTIO_BLK_BLOCK_SIZE)
-		return EINVAL;
-
-	for (i = 0; i < cnt; i++) {
-		rc = virtio_blk_rw_block(virtio_blk, read, ba + i,
-		    buf + i * VIRTIO_BLK_BLOCK_SIZE);
-		if (rc != EOK)
-			return rc;
-	}
-
-	return EOK;
 }
 
 static errno_t virtio_blk_bd_read_blocks(bd_srv_t *bd, aoff64_t ba, size_t cnt,
@@ -382,8 +371,8 @@ static errno_t virtio_blk_initialize(ddf_dev_t *dev)
 	    true, virtio_blk->rq_header, virtio_blk->rq_header_p);
 	if (rc != EOK)
 		goto fail;
-	rc = virtio_setup_dma_bufs(RQ_BUFFERS, VIRTIO_BLK_BLOCK_SIZE,
-	    true, virtio_blk->rq_buf, virtio_blk->rq_buf_p);
+	rc = virtio_setup_dma_bufs(RQ_BUFFERS, DATA_XFER_LIMIT, true,
+	    virtio_blk->rq_buf, virtio_blk->rq_buf_p);
 	if (rc != EOK)
 		goto fail;
 	rc = virtio_setup_dma_bufs(RQ_BUFFERS, sizeof(virtio_blk_req_footer_t),
