@@ -32,10 +32,13 @@
 #include <virtio-pci.h>
 #include <bd_srv.h>
 #include <abi/cap.h>
+#include <abi/ipc/ipc.h> /* DATA_XFER_LIMIT */
 
 #include <fibril_synch.h>
 
 #define VIRTIO_BLK_BLOCK_SIZE	512
+
+#define RQ_XFER_BUFFER_SIZE	DATA_XFER_LIMIT
 
 /* Operation types. */
 #define VIRTIO_BLK_T_IN		0
