@@ -28,20 +28,26 @@
 
 deps = [ 'block', 'crypto', 'device' ]
 src = files(
-            'fge.c',
-            'hr.c',
-            'io.c',
-            'metadata/foreign/geom/hr_g_mirror.c',
-            'metadata/foreign/geom/hr_g_stripe.c',
-            'metadata/foreign/md/hr_md.c',
-            'metadata/foreign/softraid/hr_softraid.c',
-            'metadata/foreign/softraid/softraid.c',
-            'metadata/native.c',
-            'metadata/noop.c',
-            'parity_stripe.c',
-            'raid0.c',
-            'raid1.c',
-            'raid5.c',
-            'superblock.c',
-            'util.c'
-            )
+	'fge.c',
+	'hr.c',
+	'io.c',
+	'metadata/foreign/geom/hr_g_mirror.c',
+	'metadata/foreign/geom/hr_g_stripe.c',
+	'metadata/foreign/md/hr_md.c',
+	'metadata/foreign/softraid/hr_softraid.c',
+	'metadata/foreign/softraid/softraid.c',
+	'metadata/native.c',
+	'metadata/noop.c',
+	'parity_stripe.c',
+	'raid0.c',
+	'raid1.c',
+	'raid5.c',
+	'superblock.c',
+	'util.c'
+)
+
+test_src = files(
+	'test/main.c',
+        'test/raid.c',
+        'test/helper.c',
+)
