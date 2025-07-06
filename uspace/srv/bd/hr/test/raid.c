@@ -112,6 +112,18 @@ PCUT_TEST(raid1_blkno)
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
+PCUT_TEST(raid4_blkno)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid5_blkno";
+
+	uint64_t expected_blkno = min_blkno * (DISKNO - 1);
+	expected_blkno -= META_BLKNO * (DISKNO - 1);
+
+	rc = test_vol_blkno(volname, HR_LVL_5, DISKNO, 0, expected_blkno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
 PCUT_TEST(raid5_blkno)
 {
 	errno_t rc;
@@ -144,6 +156,18 @@ PCUT_TEST(raid1_blkno_noop_meta)
 	uint64_t expected_blkno = min_blkno;
 
 	rc = test_vol_blkno(volname, HR_LVL_1, DISKNO, HR_VOL_FLAG_NOOP_META,
+	    expected_blkno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
+PCUT_TEST(raid4_blkno_noop_meta)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid5_blkno_noop_meta";
+
+	uint64_t expected_blkno = min_blkno * (DISKNO - 1);
+
+	rc = test_vol_blkno(volname, HR_LVL_5, DISKNO, HR_VOL_FLAG_NOOP_META,
 	    expected_blkno);
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
@@ -392,6 +416,16 @@ PCUT_TEST(raid1_WO_RO)
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
+PCUT_TEST(raid4_WO_RO)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_WO_RO";
+	uint64_t writeno = 10;
+
+	rc = test_WO_RO(volname, HR_LVL_4, DISKNO, 0, writeno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
 PCUT_TEST(raid5_WO_RO)
 {
 	errno_t rc;
@@ -409,6 +443,16 @@ PCUT_TEST(raid1_WO_RD)
 	uint64_t writeno = 10;
 
 	rc = test_WO_RD(volname, HR_LVL_1, DISKNO, 0, writeno, DISKNO - 1);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
+PCUT_TEST(raid4_WO_RD)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_WO_RD";
+	uint64_t writeno = 10;
+
+	rc = test_WO_RD(volname, HR_LVL_4, DISKNO, 0, writeno, 1);
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
@@ -433,6 +477,17 @@ PCUT_TEST(raid1_WD_RD)
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
+PCUT_TEST(raid4_WD_RD)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_WD_RD";
+	uint64_t writeno = 10;
+	size_t failno = 1;
+
+	rc = test_WD_RD(volname, HR_LVL_4, DISKNO, 0, writeno, failno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
 PCUT_TEST(raid5_WD_RD)
 {
 	errno_t rc;
@@ -454,6 +509,16 @@ PCUT_TEST(raid1_rebuild, PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
+PCUT_TEST(raid4_rebuild, PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_rebuild";
+	size_t failno = 1;
+
+	rc = test_rebuild(volname, HR_LVL_4, DISKNO, 0, failno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
 PCUT_TEST(raid5_rebuild, PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
 {
 	errno_t rc;
@@ -471,6 +536,16 @@ PCUT_TEST(raid1_WD_R_RD, PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
 	uint64_t writeno = 10;
 
 	rc = test_WD_R_RD(volname, HR_LVL_1, 2, 0, writeno);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
+PCUT_TEST(raid4_WD_R_RD, PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_WD_R_RD";
+	uint64_t writeno = 10;
+
+	rc = test_WD_R_RD(volname, HR_LVL_4, 3, 0, writeno);
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
@@ -502,6 +577,15 @@ PCUT_TEST(raid1_assembly_basic)
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
+PCUT_TEST(raid4_assembly_basic)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_assembly_basic";
+
+	rc = test_assembly_basic(volname, HR_LVL_4, DISKNO, 0);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
 PCUT_TEST(raid5_assembly_basic)
 {
 	errno_t rc;
@@ -517,6 +601,15 @@ PCUT_TEST(raid1_assembly_part_R)
 	const char *volname = "_testvol_raid1_assembly_part_R";
 
 	rc = test_assembly_partial_R(volname, HR_LVL_1, DISKNO, 0);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
+PCUT_TEST(raid4_assembly_part_R)
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_assembly_part_R";
+
+	rc = test_assembly_partial_R(volname, HR_LVL_4, DISKNO, 0);
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
@@ -536,6 +629,16 @@ PCUT_TEST(raid1_assembly_part_W,
 	const char *volname = "_testvol_raid1_assembly_part_W";
 
 	rc = test_assembly_partial_W(volname, HR_LVL_1, DISKNO, 0);
+	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
+}
+
+PCUT_TEST(raid4_assembly_part_W,
+    PCUT_TEST_SET_TIMEOUT(PCUT_DEFAULT_TEST_TIMEOUT * 5))
+{
+	errno_t rc;
+	const char *volname = "_testvol_raid4_assembly_part_W";
+
+	rc = test_assembly_partial_W(volname, HR_LVL_4, DISKNO, 0);
 	PCUT_ASSERT_ERRNO_VAL(EOK, rc);
 }
 
