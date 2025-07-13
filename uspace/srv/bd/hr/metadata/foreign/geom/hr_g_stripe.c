@@ -167,7 +167,7 @@ static errno_t meta_gstripe_init_meta2vol(const list_t *list, hr_volume_t *vol)
 
 	vol->data_offset = 0;
 
-	if (main_meta->md_all > HR_MAX_EXTENTS) {
+	if (vol->extent_no > HR_MAX_EXTENTS) {
 		HR_DEBUG("Assembled volume has %u extents (max = %u)",
 		    (unsigned)main_meta->md_all, HR_MAX_EXTENTS);
 		rc = EINVAL;
@@ -188,7 +188,6 @@ static errno_t meta_gstripe_init_meta2vol(const list_t *list, hr_volume_t *vol)
 		uint16_t index = iter_meta->md_no;
 
 		vol->extents[index].svc_id = iter->svc_id;
-		iter->fini = false;
 
 		vol->extents[index].state = HR_EXT_ONLINE;
 	}

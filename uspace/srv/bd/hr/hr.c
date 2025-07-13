@@ -112,6 +112,14 @@ static void hr_create_srv(ipc_call_t *icall)
 		return;
 	}
 
+	if (cfg->dev_no > HR_MAX_EXTENTS) {
+		HR_ERROR("provided %u devices (max = %u)",
+		    (unsigned)cfg->dev_no, HR_MAX_EXTENTS);
+		free(cfg);
+		async_answer_0(icall, ELIMIT);
+		return;
+	}
+
 	/*
 	 * If there was a missing device provided
 	 * for creation of a new volume, abort
@@ -324,8 +332,11 @@ static void hr_stop_all_srv(ipc_call_t *icall)
 	if (rc != EOK)
 		goto fail;
 
-	for (i = 0; i < vol_cnt; i++)
-		(void)hr_remove_volume(vol_svcs[i]);
+	for (i = 0; i < vol_cnt; i++) {
+		errno_t rc2 = hr_remove_volume(vol_svcs[i]);
+		if (rc2 == EBUSY)
+			rc = EBUSY;
+	}
 
 fail:
 	if (vol_svcs != NULL)

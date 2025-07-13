@@ -97,10 +97,6 @@ errno_t hr_raid5_create(hr_volume_t *new_volume)
 		return EINVAL;
 	}
 
-	bd_srvs_init(&new_volume->hr_bds);
-	new_volume->hr_bds.ops = &hr_raid5_bd_ops;
-	new_volume->hr_bds.sarg = new_volume;
-
 	hr_raid5_vol_state_eval_forced(new_volume);
 
 	fibril_rwlock_read_lock(&new_volume->states_lock);
@@ -111,6 +107,10 @@ errno_t hr_raid5_create(hr_volume_t *new_volume)
 		    new_volume->devname);
 		return EINVAL;
 	}
+
+	bd_srvs_init(&new_volume->hr_bds);
+	new_volume->hr_bds.ops = &hr_raid5_bd_ops;
+	new_volume->hr_bds.sarg = new_volume;
 
 	return EOK;
 }
@@ -130,7 +130,7 @@ errno_t hr_raid5_init(hr_volume_t *vol)
 	uint64_t single_sz = vol->truncated_blkno - vol->meta_ops->get_size();
 	vol->data_blkno = single_sz * (vol->extent_no - 1);
 
-	vol->strip_size = HR_STRIP_SIZE;
+	vol->strip_size = hr_closest_pow2(HR_STRIP_SIZE / (vol->extent_no - 1));
 
 	if (vol->level == HR_LVL_4)
 		vol->layout = HR_LAYOUT_RAID4_N;
@@ -240,19 +240,6 @@ static errno_t hr_raid5_bd_read_blocks(bd_srv_t *bd, uint64_t ba, size_t cnt,
 	hr_stripe_t *stripes = hr_create_stripes(vol, vol->strip_size,
 	    stripes_cnt, false);
 
-	hr_range_lock_t **rlps = hr_malloc_waitok(stripes_cnt * sizeof(*rlps));
-
-	/*
-	 * extent order has to be locked for the whole IO duration,
-	 * so that workers have consistent targets
-	 */
-	fibril_rwlock_read_lock(&vol->extents_lock);
-
-	for (uint64_t s = start_stripe; s <= end_stripe; s++) {
-		uint64_t relative = s - start_stripe;
-		rlps[relative] = hr_range_lock_acquire(vol, s, 1);
-	}
-
 	uint64_t phys_block, len;
 	size_t left;
 
@@ -300,6 +287,19 @@ static errno_t hr_raid5_bd_read_blocks(bd_srv_t *bd, uint64_t ba, size_t cnt,
 		strip_no++;
 	}
 
+	hr_range_lock_t **rlps = hr_malloc_waitok(stripes_cnt * sizeof(*rlps));
+
+	/*
+	 * extent order has to be locked for the whole IO duration,
+	 * so that workers have consistent targets
+	 */
+	fibril_rwlock_read_lock(&vol->extents_lock);
+
+	for (uint64_t s = start_stripe; s <= end_stripe; s++) {
+		uint64_t relative = s - start_stripe;
+		rlps[relative] = hr_range_lock_acquire(vol, s, 1);
+	}
+
 retry:
 	size_t bad_extent = vol->extent_no;
 
@@ -322,13 +322,13 @@ retry:
 	for (size_t s = 0; s < stripes_cnt; s++) {
 		if (stripes[s].done)
 			continue;
-		execute_stripe(&stripes[s], bad_extent);
+		hr_execute_stripe(&stripes[s], bad_extent);
 	}
 
 	for (size_t s = 0; s < stripes_cnt; s++) {
 		if (stripes[s].done)
 			continue;
-		wait_for_stripe(&stripes[s]);
+		hr_wait_for_stripe(&stripes[s]);
 	}
 
 	hr_raid5_vol_state_eval(vol);
@@ -451,19 +451,6 @@ static errno_t hr_raid5_bd_write_blocks(bd_srv_t *bd, aoff64_t ba, size_t cnt,
 			stripes[relative_stripe].subtract = true;
 	}
 
-	hr_range_lock_t **rlps = hr_malloc_waitok(stripes_cnt * sizeof(*rlps));
-
-	/*
-	 * extent order has to be locked for the whole IO duration,
-	 * so that workers have consistent targets
-	 */
-	fibril_rwlock_read_lock(&vol->extents_lock);
-
-	for (uint64_t s = start_stripe; s <= end_stripe; s++) {
-		uint64_t relative = s - start_stripe;
-		rlps[relative] = hr_range_lock_acquire(vol, s, 1);
-	}
-
 	uint64_t phys_block, len;
 	size_t left;
 
@@ -509,6 +496,19 @@ static errno_t hr_raid5_bd_write_blocks(bd_srv_t *bd, aoff64_t ba, size_t cnt,
 		strip_no++;
 	}
 
+	hr_range_lock_t **rlps = hr_malloc_waitok(stripes_cnt * sizeof(*rlps));
+
+	/*
+	 * extent order has to be locked for the whole IO duration,
+	 * so that workers have consistent targets
+	 */
+	fibril_rwlock_read_lock(&vol->extents_lock);
+
+	for (uint64_t s = start_stripe; s <= end_stripe; s++) {
+		uint64_t relative = s - start_stripe;
+		rlps[relative] = hr_range_lock_acquire(vol, s, 1);
+	}
+
 retry:
 	size_t bad_extent = vol->extent_no;
 
@@ -531,13 +531,13 @@ retry:
 	for (size_t s = 0; s < stripes_cnt; s++) {
 		if (stripes[s].done)
 			continue;
-		execute_stripe(&stripes[s], bad_extent);
+		hr_execute_stripe(&stripes[s], bad_extent);
 	}
 
 	for (size_t s = 0; s < stripes_cnt; s++) {
 		if (stripes[s].done)
 			continue;
-		wait_for_stripe(&stripes[s]);
+		hr_wait_for_stripe(&stripes[s]);
 	}
 
 	hr_raid5_vol_state_eval(vol);
@@ -706,7 +706,6 @@ static errno_t hr_raid5_rebuild(void *arg)
 	hr_volume_t *vol = arg;
 	errno_t rc = EOK;
 	size_t rebuild_idx;
-	void *buf = NULL, *xorbuf = NULL;
 
 	if (vol->vflags & HR_VOL_FLAG_READ_ONLY)
 		return ENOTSUP;
@@ -720,8 +719,6 @@ static errno_t hr_raid5_rebuild(void *arg)
 	uint64_t max_blks = DATA_XFER_LIMIT / vol->bsize;
 	uint64_t left =
 	    vol->data_blkno / (vol->extent_no - 1) - vol->rebuild_blk;
-	buf = hr_malloc_waitok(max_blks * vol->bsize);
-	xorbuf = hr_malloc_waitok(max_blks * vol->bsize);
 
 	uint64_t strip_size = vol->strip_size / vol->bsize; /* in blocks */
 
@@ -854,8 +851,6 @@ end:
 	hr_raid1_vol_state_eval(vol);
 
 	hr_destroy_stripes(stripe, 1);
-	free(buf);
-	free(xorbuf);
 
 	return rc;
 }
