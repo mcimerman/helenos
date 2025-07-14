@@ -39,6 +39,7 @@
 #include <perf.h>
 #include <vfs/vfs.h>
 #include <str_error.h>
+#include <stdint.h>
 
 #define NAME "iotester"
 
@@ -263,7 +264,8 @@ int main(int argc, char **argv)
 	max_xfer = uint64_t_le2host(max_xfer);
 
 	if (max_xfer != DATA_XFER_LIMIT) {
-		printf("maximum transfer size specified = %lu,\n", max_xfer);
+		printf("maximum transfer size specified = %" PRIu64 ",\n",
+		    max_xfer);
 		printf("!= DATA_XFER_SIZE (%ju),\n",
 		    (uintmax_t)DATA_XFER_LIMIT);
 		rc = EINVAL;
