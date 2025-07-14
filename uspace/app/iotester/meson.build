@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Jiří Zárevúcky
+# Copyright (c) 2025 Miroslav Cimerman
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,91 +26,18 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-apps = [
-	'aboutos',
-	'barber',
-	'bdsh',
-	'bdwrite',
-	'bithenge',
-	'blkdump',
-	'calculator',
-	'corecfg',
-	'cpptest',
-	'date',
-	'devctl',
-	'df',
-	'disp',
-	'display-cfg',
-	'dnscfg',
-	'dnsres',
-	'download',
-	'edit',
-	'fdisk',
-	'fontedit',
-	'getterm',
-	'gfxdemo',
-	'gunzip',
-	'hbench',
-	'hello',
-	'hrctl',
-	'inet',
-	'init',
-	'iotester',
-	'kill',
-	'killall',
-	'kio',
-	'loc',
-	'logset',
-	'lprint',
-	'mixerctl',
-	'mkbd',
-	'mkexfat',
-	'mkext4',
-	'mkfat',
-	'mkmfs',
-	'modplay',
-	'nav',
-	'netecho',
-	'nic',
-	'nterm',
-	'ofw',
-	'pci',
-	'ping',
-	'pkg',
-	'redir',
-	'sbi',
-	'shutdown',
-	'shutdown-dlg',
-	'sportdmp',
-	'stats',
-	'sysinfo',
-	'sysinst',
-	'taskbar',
-	'taskbar-cfg',
-	'taskdump',
-	'terminal',
-	'tester',
-	'testread',
-	'testrunner',
-	'testwrit',
-	'tetris',
-	'tmon',
-	'top',
-	'trace',
-	'uidemo',
-	'untar',
-	'usbinfo',
-	'viewer',
-	'vol',
-	'vuhid',
-	'wavplay',
-	'websrv',
-	'wifi_supplicant',
+deps = [ 'block' ]
+src = files('iotester.c')
+
+testfiles = [
+  'hr-unit-tests-create-disks.bdsh',
+  'iotest-small-random',
+  'iotest-small-seq',
+  'iotest-small-seq-2m-xfer',
+  'sample_hrconfig_file_bd.sif',
+  'sample_hrconfig_pci-ide.sif'
 ]
 
-if CONFIG_BUILD_SHARED_LIBS
-	apps += [
-		'dltest',
-		'dltests',
-	]
-endif
+foreach f : testfiles
+  installed_data += { 'name': f, 'dir': '/hr_testdata' }
+endforeach

@@ -42,10 +42,10 @@ PCUT_TEST_SUITE(raid);
 
 service_id_t disks[DISKNO];
 const char *const disknames[] = {
-	"disk1",
-	"disk2",
-	"disk3",
-	"disk4",
+	"_hr_testdisk1",
+	"_hr_testdisk2",
+	"_hr_testdisk3",
+	"_hr_testdisk4",
 };
 uint64_t min_blkno;
 
@@ -60,7 +60,7 @@ PCUT_TEST_BEFORE
 	for (size_t i = 0; i < DISKNO; i++) {
 		rc = loc_service_get_id(disknames[i], &disks[i], 0);
 		if (rc != EOK) {
-			printf("run \"batch cfg/create_file_bd_disks.bdsh\"\n");
+			printf("run \"batch hr_testdata/hr-unit-tests-create-disks.bdsh\"\n");
 			return;
 		}
 		PCUT_ASSERT_ERRNO_VAL(EOK, rc);

@@ -1,0 +1,9 @@
+mkfile -s 25M /tmp/testdiskfile1
+mkfile -s 25M /tmp/testdiskfile2
+mkfile -s 25M /tmp/testdiskfile3
+mkfile -s 25M /tmp/testdiskfile4
+
+/srv/bd/file_bd -b 512 /tmp/testdiskfile1 _hr_testdisk1
+/srv/bd/file_bd -b 512 /tmp/testdiskfile2 _hr_testdisk2
+/srv/bd/file_bd -b 512 /tmp/testdiskfile3 _hr_testdisk3
+/srv/bd/file_bd -b 512 /tmp/testdiskfile4 _hr_testdisk4
