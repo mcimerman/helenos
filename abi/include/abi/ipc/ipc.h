@@ -56,7 +56,7 @@ enum {
 	 * Maximum buffer size allowed for IPC_M_DATA_WRITE and
 	 * IPC_M_DATA_READ requests.
 	 */
-	DATA_XFER_LIMIT = 64 * 1024,
+	DATA_XFER_LIMIT = 1024 * 1024 * 2,
 };
 
 /* Flags for calls */
