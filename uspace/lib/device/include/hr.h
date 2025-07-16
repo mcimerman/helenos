@@ -41,7 +41,7 @@
 #include <loc.h>
 
 /* for now */
-#define HR_MAX_EXTENTS 4
+#define HR_MAX_EXTENTS 16
 #define HR_MAX_HOTSPARES HR_MAX_EXTENTS
 
 #define HR_DEVNAME_LEN 32
