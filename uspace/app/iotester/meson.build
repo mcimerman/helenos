@@ -35,7 +35,8 @@ testfiles = [
   'iotest-small-seq',
   'iotest-small-seq-2m-xfer',
   'sample_hrconfig_file_bd.sif',
-  'sample_hrconfig_pci-ide.sif'
+  'sample_hrconfig_pci-ide.sif',
+  'img.tga'
 ]
 
 foreach f : testfiles
