@@ -580,7 +580,7 @@ static int handle_assemble(hr_t *hr, int argc, char **argv)
 	while (try_to_get_additional_flags(argc, argv, test_flags, &vflags))
 		;
 
-	if (test_flags & HR_VOL_FLAG_NOOP_META)
+	if (vflags & HR_VOL_FLAG_NOOP_META)
 		printf(NAME ": assembling, --no-meta flag will be ignored\n");
 
 	if (str_cmp(argv[optind], "-f") == 0) {
