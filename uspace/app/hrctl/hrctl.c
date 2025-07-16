@@ -100,10 +100,10 @@ static const char usage_str[] =
     "\t\thrctl -c -f cfg.sif\n"
     "\t\thrctl --assemble disk1 disk2 disk3\n"
     "\t\thrctl -a\n"
-    "\t\thrctl -d devices/hr0\n"
+    "\t\thrctl -d hr0\n"
     "\t\thrctl -d\n"
-    "\t\thrctl --modify devices/hr0 --fail 0\n"
-    "\t\thrctl --modify devices/hr0 --hotspare disk4\n"
+    "\t\thrctl --modify hr0 --fail 0\n"
+    "\t\thrctl --modify hr0 --hotspare disk4\n"
     "\t\thrctl -s\n"
     "\n"
     "Notes:\n"
@@ -580,7 +580,7 @@ static int handle_assemble(hr_t *hr, int argc, char **argv)
 	while (try_to_get_additional_flags(argc, argv, test_flags, &vflags))
 		;
 
-	if (test_flags & HR_VOL_FLAG_NOOP_META)
+	if (vflags & HR_VOL_FLAG_NOOP_META)
 		printf(NAME ": assembling, --no-meta flag will be ignored\n");
 
 	if (str_cmp(argv[optind], "-f") == 0) {
